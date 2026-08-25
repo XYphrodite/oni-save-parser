@@ -26,6 +26,7 @@ export interface SaveDigest {
     difficulty?: DigestDifficulty;
     duplicants: DigestDuplicant[];
     geysers: DigestGeyser[];
+    achievements?: DigestAchievements;
     objects: DigestObjects;
     materials: DigestMaterials;
     unmodelledBehaviors: DigestUnmodelledBehavior[];
@@ -92,6 +93,12 @@ export interface DigestGeyser {
         yearLength?: number;
         yearPercent?: number;
     };
+}
+export interface DigestAchievements {
+    earned: string[];
+    /** Marked failed by the game; a "do not do X" condition that was broken. */
+    failed: string[];
+    pending: number;
 }
 export interface DigestObjects {
     groups: number;
