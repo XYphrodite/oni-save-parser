@@ -67,3 +67,5 @@ export function writeSaveGame(
   unparse<SaveGame>(writer, saveGameUnparser(save), interceptor);
   return writer.getBytes();
 }
+
+export * from "./digest";

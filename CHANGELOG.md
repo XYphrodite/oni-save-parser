@@ -13,6 +13,12 @@ Fork of RoboPhred/oni-save-parser, targeting the base game with no DLC.
 
 ### Added
 
+- `buildSaveDigest(save, options)`: a save reduced to what can be reasoned about --
+  hashes resolved to names, the object tail aggregated into counts, per-entity detail
+  only for duplicants and geysers. `npm run dump -- <file.sav>` writes it as JSON.
+- `buildFullDump(save, options)` and `--scope full` for the raw parsed model, with
+  binaries as base64 and `simData` omitted by default.
+
 - `isVerifiedVersion(major, minor)`, exported alongside the version constants.
 - `getDLCIds(gameInfo)` and `isBaseGameSave(gameInfo)`. `SaveGameInfo` gained the
   `dlcIds` array newer builds write in place of the single `dlcId`.

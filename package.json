@@ -17,6 +17,7 @@
     "build": "tsc -p src",
     "watch": "tsc -p src -w",
     "check": "node lib/cli/round-trip.js",
+    "dump": "node lib/cli/dump.js",
     "format": "prettier --write \"src/**/*.ts\"",
     "prepublishOnly": "npm run build"
   },

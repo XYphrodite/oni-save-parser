@@ -33,6 +33,52 @@ parser does not model, which is where a future format change would show up first
 Note that the written file is never byte-identical to the original: the game compresses
 with Ionic.Zlib and this library uses pako. Only the uncompressed content matches.
 
+## JSON output
+
+Two CLIs, both writing JSON to stdout or to `--out`:
+
+```
+npm run dump -- "colony.sav"                     # digest, the default
+npm run dump -- "colony.sav" --out colony.json
+npm run dump -- "colony.sav" --scope full        # raw parsed model
+```
+
+The **digest** is built to be read rather than to be complete. A save holds
+hundreds of thousands of game objects, so dumping them verbatim produces
+megabytes that say very little. It resolves hashes back to names, aggregates the
+long tail into counts, and keeps per-entity detail only where entities are few
+and individually meaningful:
+
+| Section | Contents |
+| --- | --- |
+| `meta` | build, save version, whether the version is verified, DLC ids |
+| `colony` | name, cycle count, duplicant count, sandbox flag |
+| `world` | map dimensions, whether the surface is discovered |
+| `difficulty` | custom game settings, per-setting quality levels |
+| `duplicants` | name, traits, role, mastered skills, attribute levels, live meters (stress, calories, stamina...), sicknesses, health |
+| `geysers` | type, cell, configuration rolls |
+| `objects` | totals plus a count per prefab |
+| `materials` | element totals across game objects |
+| `unmodelledBehaviors` | behaviors carrying data this parser does not model |
+
+Digest size tracks the number of *distinct* prefabs, duplicants and geysers, not
+the number of objects, so it stays small as a colony grows. On a toy 560-object
+save the digest is 2.4 KB where the full dump is 143 KB.
+
+`--top N` folds prefab and element counts past the Nth entry into one
+`"(N more)"` bucket. `--scope full` emits the whole parsed model instead, with
+binary values as `{ "": "<base64>", "length": n }`; `simData` is omitted
+unless `--include-sim` is passed, being megabytes this parser never interprets.
+
+Both are also available as library functions, for calling from a service rather
+than a shell:
+
+```ts
+import { parseSaveGame, buildSaveDigest } from "/oni-save-parser";
+
+const digest = buildSaveDigest(parseSaveGame(bytes));
+```
+
 ## API
 
 - `parseOniSave(ArrayBuffer): SaveGame`

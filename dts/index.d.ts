@@ -15,3 +15,4 @@ export interface ParseOptions extends SaveGameParserOptions {
 export declare function parseSaveGame(data: ArrayBuffer, interceptor?: ParseInterceptor): SaveGame;
 export declare function parseSaveGame(data: ArrayBuffer, options?: ParseOptions): SaveGame;
 export declare function writeSaveGame(save: SaveGame, interceptor?: UnparseInterceptor): ArrayBuffer;
+export * from "./digest";
