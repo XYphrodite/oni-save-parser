@@ -1,7 +1,7 @@
 # @xyphrodite/oni-save-parser
 
 > Fork of [RoboPhred/oni-save-parser](https://github.com/RoboPhred/oni-save-parser) (MIT), whose last release was September 2023.
-> Changes are listed in [CHANGELOG.md](CHANGELOG.md) under 15.0.0. Target is the **base game with no DLC**.
+> Changes are listed in [CHANGELOG.md](CHANGELOG.md). Target is the **base game with no DLC**.
 
 This library parses and writes save data from [Oxygen Not Included](https://www.klei.com/games/oxygen-not-included). It is intended for both nodejs and web environments (through webpack or rollup).
 
@@ -72,25 +72,36 @@ save the digest is 2.4 KB where the full dump is 143 KB.
 
 `--top N` folds prefab and element counts past the Nth entry into one
 `"(N more)"` bucket. `--scope full` emits the whole parsed model instead, with
-binary values as `{ "": "<base64>", "length": n }`; `simData` is omitted
+binary values as `{ "$binary": "<base64>", "length": n }`; `simData` is omitted
 unless `--include-sim` is passed, being megabytes this parser never interprets.
 
 Both are also available as library functions, for calling from a service rather
 than a shell:
 
 ```ts
-import { parseSaveGame, buildSaveDigest } from "/oni-save-parser";
+import { parseSaveGame, buildSaveDigest } from "@xyphrodite/oni-save-parser";
 
 const digest = buildSaveDigest(parseSaveGame(bytes));
 ```
 
 ## API
 
-- `parseOniSave(ArrayBuffer): SaveGame`
-  Parses an ArrayBuffer of data into a save game object.
+- `parseSaveGame(ArrayBuffer, options?): SaveGame`
+  Parses an ArrayBuffer of data into a save game object. `options.versionStrictness`
+  is `"major"` by default; see Game Compatibility above.
 
-- `writeOniSave(SaveGame): ArrayBuffer`
+- `writeSaveGame(SaveGame): ArrayBuffer`
   Writes a save game object into an array buffer.
+
+- `buildSaveDigest(SaveGame, options?): SaveDigest`
+  Reduces a save to the readable summary described under JSON output.
+
+- `buildFullDump(SaveGame, options?)`
+  The whole parsed model, with binaries base64-encoded so it survives
+  `JSON.stringify`.
+
+- `getBehavior(GameObject, BehaviorName)`
+  Looks up one behavior on a game object, typed by the behavior constant.
 
 ### Typedefs
 
@@ -125,7 +136,7 @@ const {
     parseSaveGame,
     writeSaveGame,
     AIAttributeLevelsBehavior
-} = require("oni-save-parser");
+} = require("@xyphrodite/oni-save-parser");
 
 function loadFile(fileName) {
   const fileData = readFileSync(`./test-data/${fileName}.sav`);
@@ -160,7 +171,7 @@ saveFile(`${fileName}-tweaked`, saveData);
 
 ## Current Progress
 
-Data can be loaded by `parseOniSave(source: ArrayBuffer)`, and the data written out using `writeOniSave(save: OniSave): ArrayBuffer`.
+Data can be loaded by `parseSaveGame(source: ArrayBuffer)`, and the data written out using `writeSaveGame(save: SaveGame): ArrayBuffer`.
 Brand new saves cannot be created, as the world data format is not understood. This data is preserved as-is when a save is parsed then re-written.
 
 The save file and all templated data objects are loaded.
