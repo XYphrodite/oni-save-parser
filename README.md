@@ -1,4 +1,7 @@
-# oni-save-parser
+# @reborn/oni-save-parser
+
+> Fork of [RoboPhred/oni-save-parser](https://github.com/RoboPhred/oni-save-parser) (MIT), whose last release was September 2023.
+> Changes are listed in [CHANGELOG.md](CHANGELOG.md) under 15.0.0. Target is the **base game with no DLC**.
 
 This library parses and writes save data from [Oxygen Not Included](https://www.klei.com/games/oxygen-not-included). It is intended for both nodejs and web environments (through webpack or rollup).
 
@@ -6,9 +9,29 @@ This is a utility library for editing saves. If you are looking for a way to edi
 
 ## Game Compatibility
 
-This library currently supports the Automation Innovation Update (save version 7.17).
+Save files are self-describing: each one carries the type templates for everything
+it contains, and behavior data this parser has no dedicated reader for is preserved
+verbatim as `extraRaw`. A new game version therefore usually parses and re-serializes
+correctly without any code change.
 
-This library intends to parse the most recent version of the save file as tracked by the stable (non-test) version of the game. Old versions will not be supported, and changes in test branches will not be integrated until the feature makes its way to the public stable version.
+Because of that, version checking defaults to `major` strictness -- any save with major
+version 7 is accepted. `VERIFIED_VERSION_MINORS` lists the minor versions actually
+round-trip verified against this parser; `minor` strictness restricts loading to those.
+
+To verify a version, run the round-trip check against a real save:
+
+```
+npm run build
+npm run check -- "path/to/colony.sav"
+```
+
+It parses the save, writes it back, re-parses the result and diffs the two models.
+A clean run means the version round-trips losslessly -- add its minor number to
+`VERIFIED_VERSION_MINORS`. The check also lists behaviors carrying extra data this
+parser does not model, which is where a future format change would show up first.
+
+Note that the written file is never byte-identical to the original: the game compresses
+with Ionic.Zlib and this library uses pako. Only the uncompressed content matches.
 
 ## API
 

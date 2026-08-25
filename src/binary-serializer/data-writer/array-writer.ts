@@ -1,4 +1,3 @@
-import { TextEncoder } from "text-encoding";
 
 import { Vector3, Quaternion } from "../../save-structure/data-types";
 
@@ -16,7 +15,7 @@ export class ArrayDataWriter implements DataWriter {
   private _byteOffset = 0;
   private _buffer: Uint8Array;
   private _view: DataView;
-  private _textEncoder = new TextEncoder("utf-8");
+  private _textEncoder = new TextEncoder();
 
   constructor() {
     this._buffer = new Uint8Array(BUFFER_INCREASE);

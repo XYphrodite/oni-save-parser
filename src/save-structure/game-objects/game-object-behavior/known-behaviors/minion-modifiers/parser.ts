@@ -120,7 +120,7 @@ function* unparseModifier<T extends MinionModificationInstance>(
   instance: T,
   modifierInstanceType: string,
   templateUnparser: TemplateUnparser
-) {
+): UnparseIterator {
   yield writeKleiString(instance.name);
 
   const token = yield writeDataLengthBegin();

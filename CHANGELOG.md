@@ -1,3 +1,33 @@
+## 15.0.0
+
+Fork of RoboPhred/oni-save-parser, targeting the base game with no DLC.
+
+### Breaking
+
+- Default `versionStrictness` is now `"major"` instead of `"minor"`. Saves newer than
+  the verified list load instead of throwing.
+- `CURRENT_VERSION_MINOR` is deprecated in favour of `VERIFIED_VERSION_MINORS`. The old
+  name implied it tracked the game; it only ever tracked what had been tested.
+- Requires Node 20+. Dropped the `text-encoding` polyfill in favour of the global
+  `TextDecoder`/`TextEncoder`, and the unused `long` dependency.
+
+### Added
+
+- `isVerifiedVersion(major, minor)`, exported alongside the version constants.
+- `getDLCIds(gameInfo)` and `isBaseGameSave(gameInfo)`. `SaveGameInfo` gained the
+  `dlcIds` array newer builds write in place of the single `dlcId`.
+- `npm run check -- <file.sav>` round-trip verifier: parses, writes, re-parses and diffs,
+  reporting save version, DLC state and behaviors with unmodelled extra data.
+
+### Fixed
+
+- zlib results are copied out via their exact byte range. pako 2 can return a subarray
+  of a larger chunk buffer, so reading `.buffer` directly would have appended garbage.
+
+### Changed
+
+- TypeScript 3.5 -> 5.6, pako 1 -> 2, prettier 1 -> 3, compile target ES2020.
+
 ## 14.0.0
 
 - Bump version lack to 7.31

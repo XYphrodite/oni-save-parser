@@ -40,7 +40,7 @@ import { parseGameObjects, unparseGameObjects } from "./game-objects/parser";
 import { SaveGameData } from "./game-data";
 import { parseGameData, writeGameData } from "./game-data/parser";
 import { SaveGame } from "./save-game";
-import { validateVersion } from "./version-validator";
+import { validateVersion, VersionStrictness } from "./version-validator";
 
 const SAVE_HEADER = "KSAV";
 
@@ -59,11 +59,14 @@ interface SaveGameBody {
 export interface SaveGameParserOptions {
   /**
    * How strict the parser should be in ensuring the correct save file version is used.
-   * - "minor": Require the major and minor version to match.  This is the safest option.
-   * - "major": Allow unknown minor versions as long as the major version matches.
-   * - "none": Disable version checking.  This can result in corrupt data.
+   * - "major": Require the major version to match, allow any minor version. Default.
+   *   Safe in practice: the save file carries its own type templates, and unknown
+   *   behavior extra-data is preserved verbatim.
+   * - "minor": Additionally require the minor version to be one this parser has been
+   *   round-trip verified against. Strictest option.
+   * - "none": Disable version checking entirely. This can result in corrupt data.
    */
-  versionStrictness?: "none" | "major" | "minor";
+  versionStrictness?: VersionStrictness;
 }
 
 export function* parseSaveGame(
@@ -72,7 +75,7 @@ export function* parseSaveGame(
   const header: SaveGameHeader = yield* parseHeader();
 
   const { saveMajorVersion, saveMinorVersion } = header.gameInfo;
-  const versionStrictness = options.versionStrictness || "minor";
+  const versionStrictness = options.versionStrictness || "major";
   if (versionStrictness !== "none") {
     validateVersion(saveMajorVersion, saveMinorVersion, versionStrictness);
   }

@@ -1,4 +1,3 @@
-import { TextDecoder, TextEncoder } from "text-encoding";
 
 import { validate } from "jsonschema";
 
@@ -38,7 +37,7 @@ export function* unparseHeader(header: SaveGameHeader): UnparseIterator {
   const { buildVersion, headerVersion, isCompressed, gameInfo } = header;
 
   const infoStr = JSON.stringify(gameInfo);
-  const headerBytes = new TextEncoder("utf-8").encode(infoStr);
+  const headerBytes = new TextEncoder().encode(infoStr);
 
   yield writeUInt32(buildVersion);
   yield writeUInt32(headerBytes.byteLength);

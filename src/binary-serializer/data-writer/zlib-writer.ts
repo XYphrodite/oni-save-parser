@@ -4,12 +4,16 @@ import { DataWriter } from "./interfaces";
 
 import { ArrayDataWriter } from "./array-writer";
 
+import { toExactBuffer } from "../utils";
+
 export class ZlibDataWriter extends ArrayDataWriter {
   getBytes(): ArrayBuffer {
     const bytes = super.getBytesView();
-    return deflate(bytes as any, {
-      windowBits: 15
-    }).buffer;
+    return toExactBuffer(
+      deflate(bytes, {
+        windowBits: 15,
+      })
+    );
   }
 
   getBytesView(): Uint8Array {

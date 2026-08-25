@@ -1,4 +1,3 @@
-import { TextDecoder } from "text-encoding";
 
 import { Vector3, Quaternion } from "../../save-structure/data-types";
 

@@ -49,7 +49,10 @@ interface TypeParser {
   ): UnparseIterator;
 }
 
-function* parseArrayLike(info: TypeInfo, templates: TypeTemplates) {
+function* parseArrayLike(
+  info: TypeInfo,
+  templates: TypeTemplates
+): ParseIterator<any> {
   const [elementType] = info.subTypes!;
 
   // data-length

@@ -23,7 +23,13 @@ export interface SaveGameInfo {
   //worldTraits: null; // Not sure what this is
   sandboxEnabled: boolean;
   colonyGuid: string;
+  /** Empty string on the base game. "EXPANSION1_ID" for Spaced Out!. */
   dlcId: string;
+  /**
+   * Present on newer builds, which allow several content packs at once.
+   * Empty or absent on the base game.
+   */
+  dlcIds?: string[];
 }
 
 export const headerSchema: Schema = {
