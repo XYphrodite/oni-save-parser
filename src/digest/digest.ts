@@ -73,6 +73,7 @@ export interface DigestResearch {
 export interface DigestPower {
   /** Energy sitting in batteries, transformers and generator buffers. */
   storedJoules: number;
+  /** Transformers are counted separately, though they hold a buffer of their own. */
   batteries: number;
   transformers: number;
   generators: number;
@@ -368,6 +369,49 @@ function collectObjects(save: SaveGame): CollectedObjects {
   let currentPrefab = "";
 
   /**
+   * Power buffers, classified per object rather than per behavior.
+   *
+   * A transformer carries its own `Battery` behavior for its internal buffer,
+   * so counting batteries behavior-by-behavior files every transformer as a
+   * battery as well.
+   */
+  const readPowerStats = (gameObject: GameObject) => {
+    let joules = 0;
+    let isTransformer = false;
+    let isBattery = false;
+    let isGenerator = false;
+
+    for (const behavior of gameObject.behaviors) {
+      const data: any = behavior.templateData;
+      switch (behavior.name) {
+        case "PowerTransformer":
+          isTransformer = true;
+          break;
+        case "Battery":
+        case "BatterySmart":
+          isBattery = true;
+          break;
+        case "EnergyGenerator":
+          isGenerator = true;
+          break;
+        default:
+          continue;
+      }
+      joules += data?.joulesAvailable ?? 0;
+    }
+
+    if (isTransformer) {
+      power.transformers++;
+    } else if (isBattery) {
+      power.batteries++;
+    }
+    if (isGenerator) {
+      power.generators++;
+    }
+    power.storedJoules += joules;
+  };
+
+  /**
    * Behaviors read by name rather than through a typed constant, because
    * upstream models none of them. Their shapes were read off a real 7.38 save,
    * so every field is treated as possibly absent.
@@ -375,19 +419,6 @@ function collectObjects(save: SaveGame): CollectedObjects {
   const readBehaviorStats = (behavior: GameObjectBehavior) => {
     const data: any = behavior.templateData;
     switch (behavior.name) {
-      case "Battery":
-      case "BatterySmart":
-        power.batteries++;
-        power.storedJoules += data?.joulesAvailable ?? 0;
-        break;
-      case "PowerTransformer":
-        power.transformers++;
-        power.storedJoules += data?.joulesAvailable ?? 0;
-        break;
-      case "EnergyGenerator":
-        power.generators++;
-        power.storedJoules += data?.joulesAvailable ?? 0;
-        break;
       case "EnergyConsumer":
       case "NonEssentialEnergyConsumer":
         power.consumers++;
@@ -438,6 +469,8 @@ function collectObjects(save: SaveGame): CollectedObjects {
       }
       readBehaviorStats(behavior);
     }
+
+    readPowerStats(gameObject);
 
     const elementData = getBehavior(
       gameObject,

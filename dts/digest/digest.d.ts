@@ -49,6 +49,7 @@ export interface DigestResearch {
 export interface DigestPower {
     /** Energy sitting in batteries, transformers and generator buffers. */
     storedJoules: number;
+    /** Transformers are counted separately, though they hold a buffer of their own. */
     batteries: number;
     transformers: number;
     generators: number;
