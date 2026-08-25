@@ -59,6 +59,7 @@ and individually meaningful:
 | `geysers` | type, cell, configuration rolls |
 | `objects` | totals plus a count per prefab |
 | `materials` | element totals across game objects |
+| `achievements` | colony achievements earned, failed and still pending |
 | `unmodelledBehaviors` | behaviors carrying data this parser does not model |
 
 Digest size tracks the number of *distinct* prefabs, duplicants and geysers, not

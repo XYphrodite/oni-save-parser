@@ -17,6 +17,7 @@ import {
   HealthBehavior,
   MinionIdentityBehavior,
   MinionModifiersBehavior,
+  ColonyAchievementTrackerBehavior,
   MinionResumeBehavior,
   PrimaryElementBehavior,
   StorageBehavior,
@@ -46,6 +47,7 @@ export interface SaveDigest {
   difficulty?: DigestDifficulty;
   duplicants: DigestDuplicant[];
   geysers: DigestGeyser[];
+  achievements?: DigestAchievements;
   objects: DigestObjects;
   materials: DigestMaterials;
   unmodelledBehaviors: DigestUnmodelledBehavior[];
@@ -120,6 +122,13 @@ export interface DigestGeyser {
   };
 }
 
+export interface DigestAchievements {
+  earned: string[];
+  /** Marked failed by the game; a "do not do X" condition that was broken. */
+  failed: string[];
+  pending: number;
+}
+
 export interface DigestObjects {
   groups: number;
   total: number;
@@ -181,6 +190,7 @@ export function buildSaveDigest(
       discoveredSurface: save.gameData?.savedInfo?.discoveredSurface,
     },
     difficulty: buildDifficulty(save),
+    achievements: collected.achievements,
     duplicants: collected.duplicants,
     geysers: collected.geysers,
     objects: {
@@ -224,6 +234,7 @@ interface CollectedObjects {
   duplicants: DigestDuplicant[];
   geysers: DigestGeyser[];
   unmodelled: DigestUnmodelledBehavior[];
+  achievements?: DigestAchievements;
 }
 
 function collectObjects(save: SaveGame): CollectedObjects {
@@ -232,6 +243,7 @@ function collectObjects(save: SaveGame): CollectedObjects {
   const unmodelled = new Map<string, { count: number; bytes: number }>();
   const duplicants: DigestDuplicant[] = [];
   const geysers: DigestGeyser[] = [];
+  let achievements: DigestAchievements | undefined;
   let totalObjects = 0;
   let storedItems = 0;
 
@@ -264,6 +276,16 @@ function collectObjects(save: SaveGame): CollectedObjects {
       duplicants.push(describeDuplicant(gameObject));
     }
 
+    const tracker = getBehavior(gameObject, ColonyAchievementTrackerBehavior);
+    if (tracker?.extraData) {
+      achievements = {
+        earned: tracker.extraData.filter((a) => a.success).map((a) => a.id),
+        failed: tracker.extraData.filter((a) => a.failed).map((a) => a.id),
+        pending: tracker.extraData.filter((a) => !a.success && !a.failed)
+          .length,
+      };
+    }
+
     const geyser = getBehavior(gameObject, GeyserBehavior);
     if (geyser) {
       geysers.push(describeGeyser(prefab, gameObject, geyser));
@@ -290,6 +312,7 @@ function collectObjects(save: SaveGame): CollectedObjects {
     byElement,
     duplicants,
     geysers,
+    achievements,
     unmodelled: Array.from(unmodelled.entries())
       .map(([behavior, entry]) => ({ behavior, ...entry }))
       .sort((a, b) => b.bytes - a.bytes),

@@ -45,6 +45,12 @@ import {
   unparseModifiersExtraData
 } from "./known-behaviors/modifiers/parser";
 
+import { ColonyAchievementTrackerBehavior } from "./known-behaviors/colony-achievements";
+import {
+  parseColonyAchievementsExtraData,
+  unparseColonyAchievementsExtraData
+} from "./known-behaviors/colony-achievements/parser";
+
 const EXTRA_DATA_PARSERS: Record<string, ExtraDataParser> = {
   [StorageBehavior]: {
     parse: parseStorageExtraData,
@@ -57,6 +63,10 @@ const EXTRA_DATA_PARSERS: Record<string, ExtraDataParser> = {
   [ModifiersBehavior]: {
     parse: parseModifiersExtraData,
     unparse: unparseModifiersExtraData
+  },
+  [ColonyAchievementTrackerBehavior]: {
+    parse: parseColonyAchievementsExtraData,
+    unparse: unparseColonyAchievementsExtraData
   }
 };
 

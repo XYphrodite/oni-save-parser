@@ -16,3 +16,4 @@ export * from "./spacecraft-manager";
 export * from "./storage";
 export * from "./uncoverable";
 export * from "./modifiers";
+export * from "./colony-achievements";

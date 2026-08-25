@@ -2,6 +2,20 @@
 
 Fork of RoboPhred/oni-save-parser, targeting the base game with no DLC.
 
+### Added
+
+- `ColonyAchievementTracker` extra data is now parsed instead of being kept as raw
+  bytes: 35 entries of `{ id, success, failed }`. The digest reports them as
+  `achievements: { earned, failed, pending }`.
+
+### Fixed
+
+- The round-trip check walked only top-level game objects, so raw extra data on
+  items inside containers -- 1105 of them in the test save -- was verified by
+  nothing: `extraRaw` is excluded from the deep-diff, and the raw comparison never
+  reached those behaviors. It now recurses into storage and reports a
+  behavior-count mismatch instead of comparing misaligned pairs.
+
 ### Verified
 
 - Save version 7.38 (build 744825, base game, no DLC) round-trips losslessly:
