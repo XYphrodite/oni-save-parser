@@ -20,7 +20,11 @@ import { diff } from "deep-diff";
 import { parseSaveGame, writeSaveGame, ParseError } from "../index";
 import {
   SaveGame,
+  GameObject,
   GameObjectGroup,
+  GameObjectBehavior,
+  StorageBehavior,
+  getBehavior,
   isBaseGameSave,
   getDLCIds,
   isVerifiedVersion,
@@ -214,43 +218,59 @@ function buffersEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
   return Buffer.from(a).equals(Buffer.from(b));
 }
 
+/**
+ * Walk every behavior in the save, including those on items inside containers.
+ *
+ * Stored items are game objects in their own right and carry their own
+ * behaviors, so a walk that stops at the top level silently skips them.
+ */
 function eachBehavior(
   groups: GameObjectGroup[],
-  visit: (
-    groupIndex: number,
-    objectIndex: number,
-    behaviorIndex: number
-  ) => void
+  visit: (behavior: GameObjectBehavior, gameObject: GameObject) => void
 ) {
-  groups.forEach((group, groupIndex) =>
-    group.gameObjects.forEach((gameObject, objectIndex) =>
-      gameObject.behaviors.forEach((_behavior, behaviorIndex) =>
-        visit(groupIndex, objectIndex, behaviorIndex)
-      )
-    )
-  );
+  const walk = (gameObject: GameObject) => {
+    for (const behavior of gameObject.behaviors) {
+      visit(behavior, gameObject);
+    }
+    const storage = getBehavior(gameObject, StorageBehavior);
+    for (const item of storage?.extraData ?? []) {
+      walk(item);
+    }
+  };
+  for (const group of groups) {
+    for (const gameObject of group.gameObjects) {
+      walk(gameObject);
+    }
+  }
 }
 
+/**
+ * Compare raw extra data between the two parses.
+ *
+ * These bytes are excluded from the deep-diff (they are ArrayBuffers, which it
+ * cannot compare usefully), so without this they would go unchecked entirely.
+ */
 function compareExtraRaw(a: SaveGame, b: SaveGame): number {
+  const left: (ArrayBuffer | undefined)[] = [];
+  const right: (ArrayBuffer | undefined)[] = [];
+  eachBehavior(a.gameObjects, (behavior) => left.push(behavior.extraRaw));
+  eachBehavior(b.gameObjects, (behavior) => right.push(behavior.extraRaw));
+
+  if (left.length !== right.length) {
+    // A behavior appeared or vanished; report every slot as suspect rather
+    // than comparing misaligned pairs.
+    return Math.max(left.length, right.length);
+  }
+
   let mismatches = 0;
-  eachBehavior(a.gameObjects, (g, o, i) => {
-    const left = a.gameObjects[g].gameObjects[o].behaviors[i];
-    const right = b.gameObjects[g]?.gameObjects[o]?.behaviors[i];
-    if (!right || left.name !== right.name) {
-      mismatches++;
-      return;
+  for (let i = 0; i < left.length; i++) {
+    if (!left[i] && !right[i]) {
+      continue;
     }
-    if (!left.extraRaw && !right.extraRaw) {
-      return;
-    }
-    if (
-      !left.extraRaw ||
-      !right.extraRaw ||
-      !buffersEqual(left.extraRaw, right.extraRaw)
-    ) {
+    if (!left[i] || !right[i] || !buffersEqual(left[i]!, right[i]!)) {
       mismatches++;
     }
-  });
+  }
   return mismatches;
 }
 
@@ -262,8 +282,7 @@ interface UnknownExtraData {
 
 function collectUnknownExtraData(save: SaveGame): UnknownExtraData[] {
   const byName = new Map<string, UnknownExtraData>();
-  eachBehavior(save.gameObjects, (g, o, i) => {
-    const behavior = save.gameObjects[g].gameObjects[o].behaviors[i];
+  eachBehavior(save.gameObjects, (behavior) => {
     if (!behavior.extraRaw) {
       return;
     }
