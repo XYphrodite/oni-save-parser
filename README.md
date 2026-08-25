@@ -1,4 +1,4 @@
-# @reborn/oni-save-parser
+# @xyphrodite/oni-save-parser
 
 > Fork of [RoboPhred/oni-save-parser](https://github.com/RoboPhred/oni-save-parser) (MIT), whose last release was September 2023.
 > Changes are listed in [CHANGELOG.md](CHANGELOG.md) under 15.0.0. Target is the **base game with no DLC**.

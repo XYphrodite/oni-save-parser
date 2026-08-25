@@ -1,5 +1,5 @@
 {
-  "name": "@reborn/oni-save-parser",
+  "name": "@xyphrodite/oni-save-parser",
   "version": "15.1.0",
   "description": "Parser for Oxygen Not Included save files. Fork of RoboPhred/oni-save-parser, targeting the base game.",
   "main": "lib/index.js",
