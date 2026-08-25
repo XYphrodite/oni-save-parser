@@ -57,8 +57,12 @@ and individually meaningful:
 | `difficulty` | custom game settings, per-setting quality levels |
 | `duplicants` | name, traits, role, mastered skills, attribute levels, live meters (stress, calories, stamina...), sicknesses, health |
 | `geysers` | type, cell, configuration rolls |
+| `research` | techs completed, pending list, unspent points |
+| `power` | stored joules, battery / generator / consumer counts |
+| `buildings` | totals, how many switched off by hand, how many damaged |
+| `plants` | total and how many are ready to harvest |
 | `objects` | totals plus a count per prefab |
-| `materials` | element totals across game objects |
+| `materials` | per element: mass and mass-weighted mean temperature |
 | `achievements` | colony achievements earned, failed and still pending |
 | `unmodelledBehaviors` | behaviors carrying data this parser does not model |
 

@@ -9,6 +9,7 @@
 
 import { SaveGame } from "../save-structure/save-game";
 import { GameObject } from "../save-structure/game-objects/game-object";
+import { GameObjectBehavior } from "../save-structure/game-objects/game-object-behavior/game-object-behavior";
 import { getBehavior } from "../save-structure/game-objects/game-object-behavior/utils";
 import {
   AITraitsBehavior,
@@ -48,9 +49,52 @@ export interface SaveDigest {
   duplicants: DigestDuplicant[];
   geysers: DigestGeyser[];
   achievements?: DigestAchievements;
+  research?: DigestResearch;
+  power: DigestPower;
+  buildings: DigestBuildings;
+  plants: DigestPlants;
   objects: DigestObjects;
   materials: DigestMaterials;
   unmodelledBehaviors: DigestUnmodelledBehavior[];
+}
+
+export interface DigestResearch {
+  completed: number;
+  total: number;
+  /** Empty when nothing is queued. */
+  active?: string;
+  queued?: string;
+  /** Unspent research points per type. */
+  points: Record<string, number>;
+  /** Techs not yet complete, which is the shorter and more telling half. */
+  pending: string[];
+}
+
+export interface DigestPower {
+  /** Energy sitting in batteries, transformers and generator buffers. */
+  storedJoules: number;
+  batteries: number;
+  transformers: number;
+  generators: number;
+  consumers: number;
+}
+
+export interface DigestBuildings {
+  total: number;
+  /** Switched off by hand. A common cause of "why is this not working". */
+  disabled: number;
+  /**
+   * Below the highest hit point value seen for their prefab. Max HP is not in
+   * the save and varies by building and material, so it is calibrated from the
+   * save itself; a prefab whose every instance is equally damaged reads as
+   * undamaged.
+   */
+  damaged: number;
+}
+
+export interface DigestPlants {
+  total: number;
+  readyToHarvest: number;
 }
 
 export interface DigestMeta {
@@ -138,7 +182,18 @@ export interface DigestObjects {
 
 export interface DigestMaterials {
   note: string;
-  byElement: Record<string, number>;
+  byElement: Record<string, DigestElement>;
+}
+
+export interface DigestElement {
+  /** Total units across every game object made of, or holding, this element. */
+  mass: number;
+  /**
+   * Mass-weighted mean temperature in Celsius. The save stores Kelvin; Celsius
+   * is what the game shows and what the material's phase transitions are
+   * usually quoted in.
+   */
+  tempC: number;
 }
 
 export interface DigestUnmodelledBehavior {
@@ -191,8 +246,12 @@ export function buildSaveDigest(
     },
     difficulty: buildDifficulty(save),
     achievements: collected.achievements,
+    research: buildResearch(save),
     duplicants: collected.duplicants,
     geysers: collected.geysers,
+    power: collected.power,
+    buildings: collected.buildings,
+    plants: collected.plants,
     objects: {
       groups: save.gameObjects.length,
       total: collected.totalObjects,
@@ -203,10 +262,48 @@ export function buildSaveDigest(
       note:
         "Element totals across game objects (buildings, debris, stored items). " +
         "World tiles are not game objects; they live in the unparsed simData blob.",
-      byElement: capCounts(collected.byElement, top),
+      byElement: capElements(collected.byElement, top),
     },
     unmodelledBehaviors: collected.unmodelled,
   };
+}
+
+/**
+ * The research tree, read off the global SaveGame object.
+ *
+ * Reports the pending techs rather than the completed ones: past the early
+ * game the completed list is the longer and less interesting half.
+ */
+function buildResearch(save: SaveGame): DigestResearch | undefined {
+  const research: any = findGlobalBehavior(save, "Research")?.templateData;
+  const techs: any[] = research?.saveData?.techs;
+  if (!techs) {
+    return undefined;
+  }
+
+  const points: Record<string, number> = {};
+  for (const entry of research.globalPointInventory?.PointsByTypeID ?? []) {
+    const [type, amount] = entry as [string, number];
+    points[type] = round(amount)!;
+  }
+
+  return {
+    completed: techs.filter((t) => t.complete).length,
+    total: techs.length,
+    active: research.saveData.activeResearchId || undefined,
+    queued: research.saveData.targetResearchId || undefined,
+    points,
+    pending: techs.filter((t) => !t.complete).map((t) => t.techId),
+  };
+}
+
+/**
+ * Find a behavior on the singleton "SaveGame" object, which carries the
+ * colony-wide managers rather than anything placed in the world.
+ */
+function findGlobalBehavior(save: SaveGame, name: string) {
+  const group = save.gameObjects.find((g) => g.name === "SaveGame");
+  return group?.gameObjects[0]?.behaviors.find((b) => b.name === name);
 }
 
 function buildDifficulty(save: SaveGame): DigestDifficulty | undefined {
@@ -226,20 +323,29 @@ function buildDifficulty(save: SaveGame): DigestDifficulty | undefined {
   };
 }
 
+interface ElementTotals {
+  mass: number;
+  /** Sum of mass * Kelvin, divided out at the end for a mass-weighted mean. */
+  heat: number;
+}
+
 interface CollectedObjects {
   totalObjects: number;
   storedItems: number;
   byPrefab: Map<string, number>;
-  byElement: Map<string, number>;
+  byElement: Map<string, ElementTotals>;
   duplicants: DigestDuplicant[];
   geysers: DigestGeyser[];
   unmodelled: DigestUnmodelledBehavior[];
   achievements?: DigestAchievements;
+  power: DigestPower;
+  buildings: DigestBuildings;
+  plants: DigestPlants;
 }
 
 function collectObjects(save: SaveGame): CollectedObjects {
   const byPrefab = new Map<string, number>();
-  const byElement = new Map<string, number>();
+  const byElement = new Map<string, ElementTotals>();
   const unmodelled = new Map<string, { count: number; bytes: number }>();
   const duplicants: DigestDuplicant[] = [];
   const geysers: DigestGeyser[] = [];
@@ -247,21 +353,90 @@ function collectObjects(save: SaveGame): CollectedObjects {
   let totalObjects = 0;
   let storedItems = 0;
 
+  const power: DigestPower = {
+    storedJoules: 0,
+    batteries: 0,
+    transformers: 0,
+    generators: 0,
+    consumers: 0,
+  };
+  const buildings: DigestBuildings = { total: 0, disabled: 0, damaged: 0 };
+  const plants: DigestPlants = { total: 0, readyToHarvest: 0 };
+
+  /** prefab -> hit point value -> how many buildings sit at that value. */
+  const hitpointsByPrefab = new Map<string, Map<number, number>>();
+  let currentPrefab = "";
+
+  /**
+   * Behaviors read by name rather than through a typed constant, because
+   * upstream models none of them. Their shapes were read off a real 7.38 save,
+   * so every field is treated as possibly absent.
+   */
+  const readBehaviorStats = (behavior: GameObjectBehavior) => {
+    const data: any = behavior.templateData;
+    switch (behavior.name) {
+      case "Battery":
+      case "BatterySmart":
+        power.batteries++;
+        power.storedJoules += data?.joulesAvailable ?? 0;
+        break;
+      case "PowerTransformer":
+        power.transformers++;
+        power.storedJoules += data?.joulesAvailable ?? 0;
+        break;
+      case "EnergyGenerator":
+        power.generators++;
+        power.storedJoules += data?.joulesAvailable ?? 0;
+        break;
+      case "EnergyConsumer":
+      case "NonEssentialEnergyConsumer":
+        power.consumers++;
+        break;
+      case "BuildingHP":
+        buildings.total++;
+        // Max hit points vary by building and by the material it is made of
+        // (a ladder tops out at 10, a tile at 100), and the save stores only
+        // the current value. Bucket by prefab now and calibrate the maximum
+        // from the save itself once every building has been seen.
+        if (data?.hitpoints != null) {
+          let buckets = hitpointsByPrefab.get(currentPrefab);
+          if (!buckets) {
+            buckets = new Map();
+            hitpointsByPrefab.set(currentPrefab, buckets);
+          }
+          buckets.set(data.hitpoints, (buckets.get(data.hitpoints) ?? 0) + 1);
+        }
+        break;
+      case "BuildingEnabledButton":
+        if (data?.buildingEnabled === false) {
+          buildings.disabled++;
+        }
+        break;
+      case "Harvestable":
+        plants.total++;
+        if (data?.canBeHarvested) {
+          plants.readyToHarvest++;
+        }
+        break;
+    }
+  };
+
   const visit = (prefab: string, gameObject: GameObject, stored: boolean) => {
     totalObjects++;
     if (stored) {
       storedItems++;
     }
     add(byPrefab, prefab, 1);
+    currentPrefab = prefab;
 
     for (const behavior of gameObject.behaviors) {
-      if (!behavior.extraRaw) {
-        continue;
+      if (behavior.extraRaw) {
+        const entry = unmodelled.get(behavior.name) ?? { count: 0, bytes: 0 };
+        entry.count++;
+        entry.bytes += behavior.extraRaw.byteLength;
+        unmodelled.set(behavior.name, entry);
       }
-      const entry = unmodelled.get(behavior.name) ?? { count: 0, bytes: 0 };
-      entry.count++;
-      entry.bytes += behavior.extraRaw.byteLength;
-      unmodelled.set(behavior.name, entry);
+      readBehaviorStats(behavior);
     }
 
     const elementData = getBehavior(
@@ -269,7 +444,12 @@ function collectObjects(save: SaveGame): CollectedObjects {
       PrimaryElementBehavior,
     )?.templateData;
     if (elementData && elementData.Units > 0) {
-      add(byElement, elementName(elementData.ElementID), elementData.Units);
+      addElement(
+        byElement,
+        elementName(elementData.ElementID),
+        elementData.Units,
+        elementData._Temperature,
+      );
     }
 
     if (prefab === "Minion") {
@@ -305,6 +485,8 @@ function collectObjects(save: SaveGame): CollectedObjects {
     }
   }
 
+  buildings.damaged = countDamagedBuildings(hitpointsByPrefab);
+
   return {
     totalObjects,
     storedItems,
@@ -313,6 +495,9 @@ function collectObjects(save: SaveGame): CollectedObjects {
     duplicants,
     geysers,
     achievements,
+    power,
+    buildings,
+    plants,
     unmodelled: Array.from(unmodelled.entries())
       .map(([behavior, entry]) => ({ behavior, ...entry }))
       .sort((a, b) => b.bytes - a.bytes),
@@ -396,6 +581,73 @@ function describeGeyser(
 
 function add(counts: Map<string, number>, key: string, amount: number) {
   counts.set(key, (counts.get(key) ?? 0) + amount);
+}
+
+/**
+ * Count buildings sitting below the highest hit point value seen for their
+ * prefab.
+ *
+ * Calibrating against the save avoids hardcoding a max-HP table, at the cost of
+ * one blind spot: if every instance of a prefab is damaged by the same amount,
+ * none of them are counted.
+ */
+function countDamagedBuildings(
+  hitpointsByPrefab: Map<string, Map<number, number>>,
+): number {
+  let damaged = 0;
+  for (const buckets of hitpointsByPrefab.values()) {
+    const max = Math.max(...buckets.keys());
+    for (const [hitpoints, count] of buckets) {
+      if (hitpoints < max) {
+        damaged += count;
+      }
+    }
+  }
+  return damaged;
+}
+
+/** Accumulate mass and mass-weighted heat so the mean can be taken at the end. */
+function addElement(
+  totals: Map<string, ElementTotals>,
+  key: string,
+  mass: number,
+  kelvin: number | undefined,
+) {
+  const entry = totals.get(key) ?? { mass: 0, heat: 0 };
+  entry.mass += mass;
+  if (kelvin != null && Number.isFinite(kelvin)) {
+    entry.heat += mass * kelvin;
+  }
+  totals.set(key, entry);
+}
+
+const KELVIN_OFFSET = 273.15;
+
+function capElements(
+  totals: Map<string, ElementTotals>,
+  top: number,
+): Record<string, DigestElement> {
+  const sorted = Array.from(totals.entries()).sort(
+    (a, b) => b[1].mass - a[1].mass,
+  );
+  const kept = top > 0 ? sorted.slice(0, top) : sorted;
+  const out: Record<string, DigestElement> = {};
+  for (const [key, entry] of kept) {
+    out[key] = {
+      mass: round(entry.mass)!,
+      tempC: round(entry.heat / entry.mass - KELVIN_OFFSET)!,
+    };
+  }
+  if (kept.length < sorted.length) {
+    const rest = sorted.slice(kept.length);
+    const mass = rest.reduce((sum, [, e]) => sum + e.mass, 0);
+    const heat = rest.reduce((sum, [, e]) => sum + e.heat, 0);
+    out[`(${rest.length} more)`] = {
+      mass: round(mass)!,
+      tempC: round(heat / mass - KELVIN_OFFSET)!,
+    };
+  }
+  return out;
 }
 
 function capCounts(

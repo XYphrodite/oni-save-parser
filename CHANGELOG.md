@@ -1,3 +1,27 @@
+## 15.1.0
+
+Sections aimed at reasoning about a colony rather than at describing the file.
+
+### Added
+
+- `research`: techs completed out of the total, the pending list, the active and
+  queued tech, and unspent points per type.
+- `power`: joules held in batteries, transformers and generator buffers, with
+  counts of each and of consumers.
+- `buildings`: totals, how many are switched off by hand, how many are damaged.
+- `plants`: total and how many are ready to harvest.
+- `materials.byElement` now carries a mass-weighted mean temperature in Celsius
+  alongside the mass. Temperature drives most of what goes wrong in a colony and
+  the parser was discarding it.
+
+### Note
+
+Max building hit points are not stored in the save and vary by building and
+material -- a ladder tops out at 10, a tile at 100. Damage is therefore measured
+against the highest value seen for each prefab in that same save. A first
+attempt using a flat threshold of 100 called 9383 of 11523 buildings damaged;
+the calibrated count is 6.
+
 ## 15.0.0
 
 Fork of RoboPhred/oni-save-parser, targeting the base game with no DLC.

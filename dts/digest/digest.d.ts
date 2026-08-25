@@ -27,9 +27,48 @@ export interface SaveDigest {
     duplicants: DigestDuplicant[];
     geysers: DigestGeyser[];
     achievements?: DigestAchievements;
+    research?: DigestResearch;
+    power: DigestPower;
+    buildings: DigestBuildings;
+    plants: DigestPlants;
     objects: DigestObjects;
     materials: DigestMaterials;
     unmodelledBehaviors: DigestUnmodelledBehavior[];
+}
+export interface DigestResearch {
+    completed: number;
+    total: number;
+    /** Empty when nothing is queued. */
+    active?: string;
+    queued?: string;
+    /** Unspent research points per type. */
+    points: Record<string, number>;
+    /** Techs not yet complete, which is the shorter and more telling half. */
+    pending: string[];
+}
+export interface DigestPower {
+    /** Energy sitting in batteries, transformers and generator buffers. */
+    storedJoules: number;
+    batteries: number;
+    transformers: number;
+    generators: number;
+    consumers: number;
+}
+export interface DigestBuildings {
+    total: number;
+    /** Switched off by hand. A common cause of "why is this not working". */
+    disabled: number;
+    /**
+     * Below the highest hit point value seen for their prefab. Max HP is not in
+     * the save and varies by building and material, so it is calibrated from the
+     * save itself; a prefab whose every instance is equally damaged reads as
+     * undamaged.
+     */
+    damaged: number;
+}
+export interface DigestPlants {
+    total: number;
+    readyToHarvest: number;
 }
 export interface DigestMeta {
     file?: string;
@@ -108,7 +147,17 @@ export interface DigestObjects {
 }
 export interface DigestMaterials {
     note: string;
-    byElement: Record<string, number>;
+    byElement: Record<string, DigestElement>;
+}
+export interface DigestElement {
+    /** Total units across every game object made of, or holding, this element. */
+    mass: number;
+    /**
+     * Mass-weighted mean temperature in Celsius. The save stores Kelvin; Celsius
+     * is what the game shows and what the material's phase transitions are
+     * usually quoted in.
+     */
+    tempC: number;
 }
 export interface DigestUnmodelledBehavior {
     behavior: string;
