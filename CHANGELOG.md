@@ -2,6 +2,22 @@
 
 Fork of RoboPhred/oni-save-parser, targeting the base game with no DLC.
 
+### Verified
+
+- Save version 7.38 (build 744825, base game, no DLC) round-trips losslessly:
+  parse -> write -> re-parse produced no diff, no simData change and no raw
+  extra-data mismatch on a 435-cycle 4.4 MB colony.
+
+### Fixed
+
+- `Health.templateData` is `{ canBeIncapacitated }`; the typing still declared
+  `CanBeIncapacitated` and a `State` field the game no longer writes.
+- `MinionIdentity.arrivalTime` is a cycle number, not seconds. The digest was
+  dividing it by 600 and reporting every duplicant as arriving on cycle 0.
+- `MinionIdentity` gained `model`, `stickerType` and `personalityResourceId`;
+  `bodyData` is gone, appearance moved to the Accessorizer behaviors.
+- A duplicant with no role stores `"NoRole"`, now normalised to absent.
+
 ### Breaking
 
 - Default `versionStrictness` is now `"major"` instead of `"minor"`. Saves newer than

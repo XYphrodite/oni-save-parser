@@ -22,18 +22,9 @@ import {
   StorageBehavior,
 } from "../save-structure/game-objects/game-object-behavior/known-behaviors";
 import { GeyserType } from "../save-structure/const-data/geysers/geyser-type";
-import {
-  HealthState,
-  SimHashes,
-} from "../save-structure/const-data/template-enumerations";
-import {
-  getDLCIds,
-  isBaseGameSave,
-} from "../save-structure/const-data/dlc";
+import { SimHashes } from "../save-structure/const-data/template-enumerations";
+import { getDLCIds, isBaseGameSave } from "../save-structure/const-data/dlc";
 import { isVerifiedVersion } from "../save-structure/version-validator";
-
-/** Seconds of game time in one cycle. */
-const CYCLE_SECONDS = 600;
 
 export interface DigestOptions {
   /** Recorded in the output so a digest can be traced back to its source. */
@@ -108,10 +99,7 @@ export interface DigestDuplicant {
   /** Live meters: Stress, Calories, Stamina, Bladder, Breath, HitPoints, ... */
   amounts?: Record<string, number>;
   sicknesses?: string[];
-  health?: {
-    state: string;
-    canBeIncapacitated: boolean;
-  };
+  canBeIncapacitated?: boolean;
 }
 
 export interface DigestGeyser {
@@ -157,7 +145,7 @@ export interface DigestCell {
 
 export function buildSaveDigest(
   save: SaveGame,
-  options: DigestOptions = {}
+  options: DigestOptions = {},
 ): SaveDigest {
   const info = save.header.gameInfo;
   const top = options.top ?? 0;
@@ -171,7 +159,7 @@ export function buildSaveDigest(
       saveVersion: `${info.saveMajorVersion}.${info.saveMinorVersion}`,
       versionVerified: isVerifiedVersion(
         info.saveMajorVersion,
-        info.saveMinorVersion
+        info.saveMinorVersion,
       ),
       baseGame: isBaseGameSave(info),
       dlcIds: getDLCIds(info),
@@ -264,8 +252,10 @@ function collectObjects(save: SaveGame): CollectedObjects {
       unmodelled.set(behavior.name, entry);
     }
 
-    const elementData = getBehavior(gameObject, PrimaryElementBehavior)
-      ?.templateData;
+    const elementData = getBehavior(
+      gameObject,
+      PrimaryElementBehavior,
+    )?.templateData;
     if (elementData && elementData.Units > 0) {
       add(byElement, elementName(elementData.ElementID), elementData.Units);
     }
@@ -307,40 +297,36 @@ function collectObjects(save: SaveGame): CollectedObjects {
 }
 
 function describeDuplicant(gameObject: GameObject): DigestDuplicant {
-  const identity = getBehavior(gameObject, MinionIdentityBehavior)
-    ?.templateData;
+  const identity = getBehavior(
+    gameObject,
+    MinionIdentityBehavior,
+  )?.templateData;
   const traits = getBehavior(gameObject, AITraitsBehavior)?.templateData;
   const resume = getBehavior(gameObject, MinionResumeBehavior)?.templateData;
-  const attributes = getBehavior(gameObject, AIAttributeLevelsBehavior)
-    ?.templateData;
+  const attributes = getBehavior(
+    gameObject,
+    AIAttributeLevelsBehavior,
+  )?.templateData;
   const health = getBehavior(gameObject, HealthBehavior)?.templateData;
 
   return {
     name: identity?.name,
     gender: identity?.gender,
-    arrivalCycle:
-      identity?.arrivalTime != null
-        ? Math.floor(identity.arrivalTime / CYCLE_SECONDS)
-        : undefined,
+    arrivalCycle: identity?.arrivalTime,
     cell: cellOf(gameObject),
     traits: (traits?.TraitIds ?? []).filter((id: string) => id !== "None"),
-    role: resume?.currentRole || undefined,
-    targetRole: resume?.targetRole || undefined,
+    role: roleName(resume?.currentRole),
+    targetRole: roleName(resume?.targetRole),
     totalExperience: round(resume?.totalExperienceGained),
     skills: masteredNames(resume?.MasteryBySkillID),
     attributes: attributeLevels(attributes?.saveLoadLevels),
     ...describeModifiers(gameObject),
-    health: health
-      ? {
-          state: healthStateName(health.State),
-          canBeIncapacitated: health.CanBeIncapacitated,
-        }
-      : undefined,
+    canBeIncapacitated: health?.canBeIncapacitated,
   };
 }
 
 function describeModifiers(
-  gameObject: GameObject
+  gameObject: GameObject,
 ): Pick<DigestDuplicant, "amounts" | "sicknesses"> {
   const modifiers = getBehavior(gameObject, MinionModifiersBehavior)?.extraData;
   if (!modifiers) {
@@ -366,7 +352,7 @@ function describeModifiers(
 function describeGeyser(
   prefab: string,
   gameObject: GameObject,
-  geyser: GeyserBehavior
+  geyser: GeyserBehavior,
 ): DigestGeyser {
   const configuration = geyser.templateData?.configuration;
   return {
@@ -391,7 +377,7 @@ function add(counts: Map<string, number>, key: string, amount: number) {
 
 function capCounts(
   counts: Map<string, number>,
-  top: number
+  top: number,
 ): Record<string, number> {
   const sorted = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
   const kept = top > 0 ? sorted.slice(0, top) : sorted;
@@ -402,7 +388,7 @@ function capCounts(
   if (kept.length < sorted.length) {
     const rest = sorted.slice(kept.length);
     out[`(${rest.length} more)`] = round(
-      rest.reduce((sum, [, count]) => sum + count, 0)
+      rest.reduce((sum, [, count]) => sum + count, 0),
     )!;
   }
   return out;
@@ -420,7 +406,7 @@ function masteredNames(mastery: [string, boolean][] | undefined): string[] {
 }
 
 function attributeLevels(
-  levels: { attributeId: string; level: number }[] | undefined
+  levels: { attributeId: string; level: number }[] | undefined,
 ): Record<string, number> | undefined {
   if (!levels?.length) {
     return undefined;
@@ -444,9 +430,9 @@ function geyserTypeName(typeId: { hash: number } | undefined): string {
   return (GeyserType as any)[typeId.hash] ?? `unknown(${typeId.hash})`;
 }
 
-function healthStateName(state: unknown): string {
-  const name = typeof state === "number" ? HealthState[state] : undefined;
-  return name ?? String(state);
+/** ONI stores "NoRole" rather than an empty string when nothing is assigned. */
+function roleName(role: string | undefined): string | undefined {
+  return !role || role === "NoRole" ? undefined : role;
 }
 
 function round(value: number | undefined): number | undefined {

@@ -9,7 +9,7 @@ export const CURRENT_VERSION_MAJOR = 7;
  * byte-verified until added to this list by the round-trip check
  * (`npm run check -- <file.sav>`).
  */
-export const VERIFIED_VERSION_MINORS = [31];
+export const VERIFIED_VERSION_MINORS = [31, 38];
 
 /**
  * @deprecated Renamed to {@link VERIFIED_VERSION_MINORS}. The name was

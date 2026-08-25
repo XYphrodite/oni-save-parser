@@ -74,10 +74,7 @@ export interface DigestDuplicant {
     /** Live meters: Stress, Calories, Stamina, Bladder, Breath, HitPoints, ... */
     amounts?: Record<string, number>;
     sicknesses?: string[];
-    health?: {
-        state: string;
-        canBeIncapacitated: boolean;
-    };
+    canBeIncapacitated?: boolean;
 }
 export interface DigestGeyser {
     prefab: string;

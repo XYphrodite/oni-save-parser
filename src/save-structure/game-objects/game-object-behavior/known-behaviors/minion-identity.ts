@@ -16,11 +16,20 @@ export interface MinionIdentityBehavior extends GameObjectBehavior {
     gender: MinionGender;
     genderStringKey: MinionGender;
 
+    /** Cycle the duplicant joined the colony, not a timestamp. */
     arrivalTime: number;
 
     voiceIdx: number;
 
-    bodyData: BodyData;
+    /**
+     * Dropped from the save; appearance now lives on the Accessorizer and
+     * WearableAccessorizer behaviors. Kept optional for older saves.
+     */
+    bodyData?: BodyData;
+
+    model?: { name: string; hash: number };
+    stickerType?: string;
+    personalityResourceId?: { hash: number };
 
     assignableProxy: {
       id: number;
