@@ -20,8 +20,11 @@ export interface CustomGameSettings {
     customGameMode: number;
     CurrentQualityLevelsBySetting: QualityLevelSettings[];
 }
-export declare type QualityLevelSetting<TKey, TValues> = [TKey, (TValues extends (infer Value)[] ? Value : never)];
-export declare type QualityLevelSettings = QualityLevelSetting<"ImmuneSystem", typeof ImmuneSystemSettings> | QualityLevelSetting<"Stress", typeof StressSettings> | QualityLevelSetting<"Morale", typeof MoraleSettings> | QualityLevelSetting<"CalorieBurn", typeof CalorieBurnSettings> | QualityLevelSetting<"StressBreaks", typeof StressBreaksSettings> | QualityLevelSetting<"SandboxMode", typeof SandboxModeSettings>;
+export type QualityLevelSetting<TKey, TValues> = [
+    TKey,
+    (TValues extends (infer Value)[] ? Value : never)
+];
+export type QualityLevelSettings = QualityLevelSetting<"ImmuneSystem", typeof ImmuneSystemSettings> | QualityLevelSetting<"Stress", typeof StressSettings> | QualityLevelSetting<"Morale", typeof MoraleSettings> | QualityLevelSetting<"CalorieBurn", typeof CalorieBurnSettings> | QualityLevelSetting<"StressBreaks", typeof StressBreaksSettings> | QualityLevelSetting<"SandboxMode", typeof SandboxModeSettings>;
 export declare const ImmuneSystemSettings: ("Compromised" | "Weak" | "Default" | "Strong" | "Invincible")[];
 export declare const StressSettings: ("Default" | "Doomed" | "Pessimistic" | "Optimistic" | "Indomitable")[];
 export declare const MoraleSettings: ("Default" | "VeryHard" | "Hard" | "Easy" | "Disabled")[];

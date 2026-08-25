@@ -28,7 +28,7 @@ export interface BodyData {
     arms: HashedString;
     hat: HashedString;
 }
-export declare type MinionGender = "MALE" | "FEMALE" | "NB";
+export type MinionGender = "MALE" | "FEMALE" | "NB";
 export declare const MINION_IDENTITY_GENDERS: MinionGender[];
 export declare const MINION_IDENTITY_VOICES: number[];
 export declare const MINION_IDENTITY_BODY_DATA_ACCESSORIES: Record<keyof BodyData, AccessoryType>;

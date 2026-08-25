@@ -92,6 +92,6 @@ export interface WriteCompressedInstruction extends BasicWriteInstruction {
     unparser: UnparseIterator;
 }
 export declare function writeCompressed(unparser: UnparseIterator): WriteCompressedInstruction;
-export declare type WriteInstruction = WriteByteInstruction | WriteSByteInstruction | WriteBytesInstruction | WriteUInt16Instruction | WriteInt16Instruction | WriteUInt32Instruction | WriteInt32Instruction | WriteUInt64Instruction | WriteInt64Instruction | WriteSingleInstruction | WriteDoubleInstruction | WriteCharsInstruction | WriteKleiStringInstruction | GetWriterPositionInstruction | WriteDataLengthBeginInstruction | WriteDataLengthEndInstruction | WriteCompressedInstruction;
-export declare type WriteDataTypes = WriteInstruction["dataType"];
+export type WriteInstruction = WriteByteInstruction | WriteSByteInstruction | WriteBytesInstruction | WriteUInt16Instruction | WriteInt16Instruction | WriteUInt32Instruction | WriteInt32Instruction | WriteUInt64Instruction | WriteInt64Instruction | WriteSingleInstruction | WriteDoubleInstruction | WriteCharsInstruction | WriteKleiStringInstruction | GetWriterPositionInstruction | WriteDataLengthBeginInstruction | WriteDataLengthEndInstruction | WriteCompressedInstruction;
+export type WriteDataTypes = WriteInstruction["dataType"];
 export declare function isWriteInstruction(value: any): value is WriteInstruction;

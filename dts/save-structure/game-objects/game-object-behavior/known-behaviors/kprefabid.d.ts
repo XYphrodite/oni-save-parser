@@ -7,4 +7,4 @@ export interface KPrefabIDBehavior extends GameObjectBehavior {
         InstanceID: KPrefabID;
     };
 }
-export declare type KPrefabID = number;
+export type KPrefabID = number;

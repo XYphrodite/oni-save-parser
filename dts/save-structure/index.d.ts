@@ -4,3 +4,4 @@ export * from "./game-objects";
 export * from "./game-data";
 export * from "./type-templates";
 export * from "./const-data";
+export * from "./version-validator";

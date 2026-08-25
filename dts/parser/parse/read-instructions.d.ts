@@ -71,6 +71,6 @@ export interface GetReaderPosition extends BasicReadInstruction {
     dataType: "reader-position";
 }
 export declare function getReaderPosition(): GetReaderPosition;
-export declare type ReadInstruction = ReadByteInstruction | ReadSByteInstruction | ReadBytesInstruction | ReadUInt16Instruction | ReadInt16Instruction | ReadUInt32Instruction | ReadInt32Instruction | ReadUInt64Instruction | ReadInt64Instruction | ReadSingleInstruction | ReadDoubleInstruction | ReadCharsInstruction | ReadKleiStringInstruction | SkipBytesInstruction | ReadCompressedInstruction | GetReaderPosition;
-export declare type ReadDataTypes = ReadInstruction["dataType"];
+export type ReadInstruction = ReadByteInstruction | ReadSByteInstruction | ReadBytesInstruction | ReadUInt16Instruction | ReadInt16Instruction | ReadUInt32Instruction | ReadInt32Instruction | ReadUInt64Instruction | ReadInt64Instruction | ReadSingleInstruction | ReadDoubleInstruction | ReadCharsInstruction | ReadKleiStringInstruction | SkipBytesInstruction | ReadCompressedInstruction | GetReaderPosition;
+export type ReadDataTypes = ReadInstruction["dataType"];
 export declare function isReadInstruction(value: any): value is ReadInstruction;

@@ -8,8 +8,8 @@ export interface Accessory {
         Guid: string;
     };
 }
-export declare const AccessoryTypes: ("body" | "hat" | "hat_hair" | "hair_always" | "hair" | "headshape" | "eyes" | "mouth" | "neck" | "arm")[];
-export declare type AccessoryType = typeof AccessoryTypes extends (infer R)[] ? R : never;
+export declare const AccessoryTypes: ("hat" | "hat_hair" | "hair_always" | "hair" | "headshape" | "eyes" | "mouth" | "neck" | "body" | "arm")[];
+export type AccessoryType = typeof AccessoryTypes extends (infer R)[] ? R : never;
 export declare const EyeAccessoryNames: ("eyes_001" | "eyes_002" | "eyes_003" | "eyes_004" | "eyes_005")[];
 export declare const HeadshapeAccessoryNames: ("headshape_001" | "headshape_002" | "headshape_003" | "headshape_004")[];
 export declare const MouthAccessoryNames: ("mouth_001" | "mouth_002" | "mouth_003" | "mouth_004")[];

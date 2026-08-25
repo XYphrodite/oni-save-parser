@@ -1,4 +1,4 @@
-export declare type TypeTemplates = TypeTemplate[];
+export type TypeTemplates = TypeTemplate[];
 /**
  * A template describing how to
  * serialize or deserializea .NET class.

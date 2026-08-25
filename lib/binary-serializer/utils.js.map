@@ -1,0 +1,1 @@
+{"version":3,"file":"utils.js","sourceRoot":"","sources":["../../src/binary-serializer/utils.ts"],"names":[],"mappings":";;AAOA,sCAKC;AAZD;;;;;;GAMG;AACH,SAAgB,aAAa,CAAC,IAAgB;IAC5C,OAAO,IAAI,CAAC,MAAM,CAAC,KAAK,CACtB,IAAI,CAAC,UAAU,EACf,IAAI,CAAC,UAAU,GAAG,IAAI,CAAC,UAAU,CACnB,CAAC;AACnB,CAAC"}

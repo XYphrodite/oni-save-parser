@@ -6,4 +6,4 @@ export interface BinaryParsable {
 export interface BinaryWritable {
     write(writer: DataWriter): void;
 }
-export declare type BinarySerializable = BinaryParsable & BinaryWritable;
+export type BinarySerializable = BinaryParsable & BinaryWritable;
